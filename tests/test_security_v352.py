@@ -123,26 +123,33 @@ def test_csp_header_present(client):
 
 
 def test_csp_includes_per_request_nonce(client):
+    """Fork: CSP is emitted without a nonce listed in the header.
+
+    See MODIFICATIONS.md. The nonce-in-header form requires no inline
+    handlers or inline style attributes in templates. The fork keeps the
+    template nonce attributes but omits 'nonce-...' from the directive so
+    'unsafe-inline' takes effect. Correct long-term fix tracked upstream.
+    """
     resp = client.get("/login")
     csp = resp.headers.get("Content-Security-Policy", "")
-    # Each request gets a fresh nonce
-    assert "'nonce-" in csp
+    assert "default-src 'self'" in csp
+    assert "script-src 'self' 'unsafe-inline'" in csp
+    assert "style-src 'self' 'unsafe-inline'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert "object-src 'none'" in csp
+    assert "'nonce-" not in csp
 
 
-def test_csp_nonce_changes_per_request(client):
-    csps = []
+
+def test_csp_emitted_on_every_request(client):
+    """Fork: CSP emitted on every response; header is stable (no nonce)."""
+    headers = []
     for _ in range(3):
         resp = client.get("/login")
-        csps.append(resp.headers.get("Content-Security-Policy", ""))
-    # Three requests = three different nonces
-    nonces = []
-    for csp in csps:
-        # Extract first nonce-... token
-        import re
-        m = re.search(r"'nonce-([^']+)'", csp)
-        if m:
-            nonces.append(m.group(1))
-    assert len(set(nonces)) == 3
+        headers.append(resp.headers.get("Content-Security-Policy", ""))
+    assert all(h for h in headers)
+    assert len(set(headers)) == 1
+
 
 
 def test_x_content_type_options(client):
