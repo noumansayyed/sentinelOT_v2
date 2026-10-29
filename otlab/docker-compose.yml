@@ -1,0 +1,69 @@
+name: otlab
+
+services:
+  modbus-plc:
+    build: .
+    container_name: otlab-modbus-plc
+    command: ["python", "/app/server.py"]
+    networks:
+      - otnet
+    restart: unless-stopped
+
+  modbus-client:
+    build: .
+    container_name: otlab-modbus-client
+    command: ["python", "/app/client.py"]
+    depends_on:
+      - modbus-plc
+    networks:
+      - otnet
+    restart: unless-stopped
+
+  s7-plc:
+    build:
+      context: .
+      dockerfile: Dockerfile.s7
+    container_name: otlab-s7-plc
+    command: ["python", "/app/s7-server.py"]
+    networks:
+      - otnet
+    restart: unless-stopped
+
+  s7-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.s7
+    container_name: otlab-s7-client
+    command: ["python", "/app/s7-client.py"]
+    depends_on:
+      - s7-plc
+    networks:
+      - otnet
+    restart: unless-stopped
+
+  opcua-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.opcua
+    container_name: otlab-opcua-server
+    command: ["python", "/app/opcua-server.py"]
+    networks:
+      - otnet
+    restart: unless-stopped
+
+  opcua-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.opcua
+    container_name: otlab-opcua-client
+    command: ["python", "/app/opcua-client.py"]
+    depends_on:
+      - opcua-server
+    networks:
+      - otnet
+    restart: unless-stopped
+
+networks:
+  otnet:
+    driver: bridge
+    name: otlab_otnet

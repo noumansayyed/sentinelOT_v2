@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libsnap7-1 && \
+    rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir python-snap7==3.3.1
+WORKDIR /app
+COPY s7-server.py s7-client.py ./
