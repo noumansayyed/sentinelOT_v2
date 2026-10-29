@@ -1608,8 +1608,9 @@ var MS = (function() {
     if (!iso) return '--';
     try {
       var d = new Date(iso);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: tz })
+        + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short', timeZone: tz });
     } catch(e) { return iso; }
   }
 

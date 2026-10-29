@@ -2859,8 +2859,8 @@ def create_app():
         nonce_token = f"'nonce-{nonce}'" if nonce else ""
         csp_parts = [
             "default-src 'self'",
-            f"script-src 'self' {nonce_token} 'unsafe-inline'".strip(),
-            f"style-src 'self' {nonce_token} 'unsafe-inline'".strip(),
+            "script-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
             "connect-src 'self'",

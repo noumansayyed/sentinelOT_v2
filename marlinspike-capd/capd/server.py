@@ -55,7 +55,7 @@ class CapdServer:
         # Create the socket so we can chmod it before accept().
         srv_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         srv_sock.bind(sock_path)
-        os.chmod(sock_path, 0o660)
+        os.chmod(sock_path, 0o666)
         srv_sock.listen(16)
 
         loop = asyncio.get_running_loop()

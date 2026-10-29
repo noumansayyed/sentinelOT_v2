@@ -89,6 +89,22 @@ class CaptureSupervisor:
 
     # ── lifecycle ────────────────────────────────────────────
 
+    def _fix_permissions(self) -> None:
+        """chmod every cap*.pcapng in the output dir to 0644 so the host can read them."""
+        out_dir = Path(self.cfg.output_dir)
+        while self._proc is not None and self._proc.poll() is None:
+            for p in out_dir.glob("cap*.pcapng"):
+                try:
+                    os.chmod(p, 0o644)
+                except FileNotFoundError:
+                    pass
+            time.sleep(0.5)
+        for p in out_dir.glob("cap*.pcapng"):
+            try:
+                os.chmod(p, 0o644)
+            except FileNotFoundError:
+                pass
+
     def start(self) -> None:
         if self._proc is not None:
             raise RuntimeError("supervisor already started")
@@ -121,6 +137,10 @@ class CaptureSupervisor:
             bufsize=1,
         )
         self._started_at = time.time()
+        self._perm_thread = threading.Thread(
+            target=self._fix_permissions, daemon=True
+        )
+        self._perm_thread.start()
         self._stderr_thread = threading.Thread(
             target=self._consume_stderr, daemon=True,
             name=f"capd-stderr-{self.cfg.session_id}",

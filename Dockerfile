@@ -9,7 +9,8 @@ WORKDIR /build
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
-    git && \
+    git \
+    protobuf-compiler && \
     rm -rf /var/lib/apt/lists/*
 
 RUN git clone "$MARLINSPIKE_DPI_REPO" marlinspike-dpi && \

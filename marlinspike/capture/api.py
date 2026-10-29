@@ -45,6 +45,20 @@ from marlinspike.capture.client import CapdClient, CapdError, CapdUnavailable
 from marlinspike.capture.sessions import StatsHub, manager
 from marlinspike.models import CaptureSession, Project, SavedFilter, db
 
+def _iso_utc(dt):
+    """Serialize a datetime as an ISO-8601 string with explicit UTC marker.
+
+    Handles the case where the DB returned a naive datetime (TIMESTAMP WITHOUT
+    TIME ZONE column) that is nonetheless a UTC clock reading — appends +00:00
+    so consumers can parse it unambiguously.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.isoformat() + "+00:00"
+    return dt.isoformat()
+
+
 log = logging.getLogger(__name__)
 
 bp = Blueprint("capture", __name__, url_prefix="/api/capture")
@@ -206,8 +220,8 @@ def _serialize(s: CaptureSession) -> dict:
         "ring_files": s.ring_files,
         "max_duration_s": s.max_duration_s,
         "status": s.status,
-        "started_at": s.started_at.isoformat() if s.started_at else None,
-        "stopped_at": s.stopped_at.isoformat() if s.stopped_at else None,
+        "started_at": _iso_utc(s.started_at),
+        "stopped_at": _iso_utc(s.stopped_at),
         "capture_dir": s.capture_dir,
         "bytes_captured": s.bytes_captured,
         "packets_captured": s.packets_captured,
