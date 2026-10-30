@@ -6047,6 +6047,38 @@ def create_app():
     from marlinspike.capture.api import bp as capture_bp
     app.register_blueprint(capture_bp)
 
+
+    @app.route("/alerts")
+    def alerts_page():
+        from flask import render_template
+        return render_template("alerts.html")
+
+    import os as _live_os
+    if _live_os.environ.get("LIVE_CAPTURE_ENABLED", "false").lower() in ("1", "true", "yes"):
+        try:
+            from marlinspike.live_watcher import start_watcher
+            from marlinspike import live_models  # noqa: F401
+            start_watcher(app)
+        except Exception as _live_exc:
+            import logging as _live_log
+            _live_log.getLogger(__name__).exception("live_watcher failed to start: %s", _live_exc)
+    @app.route("/api/live/alerts")
+    def api_live_alerts():
+        from flask import jsonify
+        try:
+            from marlinspike.live_models import LiveAlert
+            rows = LiveAlert.query.order_by(LiveAlert.id.desc()).limit(100).all()
+            return jsonify({"alerts": [
+                {"ts": r.ts, "rule": r.rule, "severity": r.severity,
+                 "src_ip": r.src_ip, "dst_ip": r.dst_ip,
+                 "protocol": r.protocol, "message": r.message}
+                for r in rows
+            ]})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("api_live_alerts failed: %s", e)
+            return jsonify({"alerts": [], "error": str(e)}), 500
+
     return app
 
 
