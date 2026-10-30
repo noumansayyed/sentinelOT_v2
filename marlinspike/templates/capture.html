@@ -466,6 +466,25 @@
       </div>
     </section>
 
+    <!-- ── 24/7 Live Monitor ────────────────────────── -->
+    <section class="cap-panel" id="live-monitor-panel">
+      <div class="cap-panel-head">
+        <span id="lm-status-text-wrap" style="margin-left:auto;">
+          <span class="cap-policy-badge" id="lm-status-text">CHECKING…</span>
+        </span>
+      </div>
+      <div style="padding:12px 16px;">
+        <div style="font-weight:600; margin-bottom:6px;">24/7 Passive Monitor</div>
+        <div class="help" style="margin-bottom:10px;">
+          Reads completed capture files and emits rule-based alerts + reports.
+          Leaving it running keeps detection active across all capture sessions.
+        </div>
+        <button class="cap-btn primary" id="lm-start" style="display:none;">Start monitor</button>
+        <button class="cap-btn" id="lm-stop" style="display:none;">Stop monitor</button>
+        <div class="help" style="margin-top:8px;" id="lm-help"></div>
+      </div>
+    </section>
+
   </div>
 
   <!-- ── History ───────────────────────────────────── -->
@@ -973,6 +992,40 @@
     document.getElementById('cap-iface').addEventListener('change', maybeEnableStart);
     document.getElementById('cap-bpf').addEventListener('input', onBpfInput);
     document.getElementById('cap-start').addEventListener('click', onStart);
+
+    // ── 24/7 live monitor controls ───────────────────────────
+    (function(){
+      var badge  = document.getElementById('lm-status-text');
+      var btnOn  = document.getElementById('lm-start');
+      var btnOff = document.getElementById('lm-stop');
+      var help   = document.getElementById('lm-help');
+      if (!badge) return;
+      function paint(running) {
+        badge.textContent = running ? 'RUNNING' : 'STOPPED';
+        if (running) { badge.classList.remove('warn'); } else { badge.classList.add('warn'); }
+        btnOn.style.display  = running ? 'none' : '';
+        btnOff.style.display = running ? '' : 'none';
+      }
+      function fetchStatus() {
+        fetch('/api/live/watcher/status').then(function(r){ return r.json(); })
+          .then(function(d){ paint(!!d.running); })
+          .catch(function(){ badge.textContent = 'UNKNOWN'; });
+      }
+      function post(url, label) {
+        help.textContent = label + '...';
+        var csrf = window.MS_CSRF || '';
+        fetch(url, {method: 'POST', headers: {'X-CSRF-Token': csrf}}).then(function(r){ return r.json(); })
+          .then(function(d){
+            paint(!!d.running);
+            help.textContent = d.ok ? '' : ('Error: ' + (d.error || 'unknown'));
+          })
+          .catch(function(e){ help.textContent = 'Request failed: ' + e; });
+      }
+      btnOn.addEventListener('click', function(){ post('/api/live/watcher/start', 'Starting'); });
+      btnOff.addEventListener('click', function(){ post('/api/live/watcher/stop', 'Stopping'); });
+      fetchStatus();
+      setInterval(fetchStatus, 5000);
+    })();
     document.getElementById('cap-project').addEventListener('change', onProjectChange);
     document.getElementById('cap-filter-pick').addEventListener('change', onFilterPick);
     document.getElementById('cap-filter-save').addEventListener('click', onFilterSave);

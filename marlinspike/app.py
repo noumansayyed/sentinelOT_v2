@@ -6091,6 +6091,41 @@ def create_app():
         from flask import render_template
         return render_template("live_assets.html")
 
+    @app.route("/api/live/watcher/status")
+    def api_live_watcher_status():
+        from flask import jsonify
+        try:
+            from marlinspike.live_watcher import is_running
+            return jsonify({"running": bool(is_running())})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("watcher status failed: %s", e)
+            return jsonify({"running": False, "error": str(e)}), 500
+
+    @app.route("/api/live/watcher/start", methods=["POST"])
+    def api_live_watcher_start():
+        from flask import jsonify
+        try:
+            from marlinspike.live_watcher import start_watcher, is_running
+            start_watcher(app)
+            return jsonify({"ok": True, "running": bool(is_running())})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("watcher start failed: %s", e)
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/live/watcher/stop", methods=["POST"])
+    def api_live_watcher_stop():
+        from flask import jsonify
+        try:
+            from marlinspike.live_watcher import stop_watcher
+            stop_watcher()
+            return jsonify({"ok": True, "running": False})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("watcher stop failed: %s", e)
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/reports/live/<int:rid>")
     def live_report_page(rid):
         from flask import render_template, abort

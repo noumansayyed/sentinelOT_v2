@@ -11,24 +11,41 @@ DPI_BIN = "/usr/local/bin/marlinspike-dpi"
 SCAN_INTERVAL = 15
 PROCESS_GRACE = 5
 _watcher_started = False
+_watcher_stop = threading.Event()
 _lock = threading.Lock()
 _asset_cache = {}
 
 def start_watcher(app):
     global _watcher_started
+    log.info("live_watcher.start_watcher: entry _watcher_started=%s stop_set=%s", _watcher_started, _watcher_stop.is_set())
     with _lock:
-        if _watcher_started: return
+        if _watcher_started:
+            log.info("live_watcher.start_watcher: already started, no-op")
+            return
+        _watcher_stop.clear()
         _watcher_started = True
     t = threading.Thread(target=_loop, args=(app,), daemon=True, name="live-watcher")
     t.start()
-    log.info("live_watcher: started, watching %s", CAPTURE_DIR)
+    log.info("live_watcher: started, watching %s (thread alive=%s)", CAPTURE_DIR, t.is_alive())
+
+def stop_watcher():
+    global _watcher_started
+    with _lock:
+        _watcher_stop.set()
+        _watcher_started = False
+    log.info("live_watcher: stop requested")
+
+def is_running():
+    with _lock:
+        return _watcher_started and not _watcher_stop.is_set()
 
 def _loop(app):
     with app.app_context(): _seed_asset_cache()
-    while True:
+    while not _watcher_stop.is_set():
         try: _tick(app)
         except Exception: log.exception("live_watcher: tick failed")
-        time.sleep(SCAN_INTERVAL)
+        if _watcher_stop.wait(SCAN_INTERVAL): break
+    log.info("live_watcher: stopped")
 
 def _tick(app):
     if not os.path.isdir(CAPTURE_DIR): return
