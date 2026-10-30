@@ -791,6 +791,7 @@ html[data-theme="light"] .ms-bottomnav a.active { color: #FFF; }
   {% if session.get('role') == 'admin' %}
   <a href="/users" class="{% if request.path == '/users' %}active{% endif %}"><span class="bn-icon">◉</span>{{ t('nav.users') }}</a>
   <a href="/alerts" class="{% if request.path == '/alerts' %}active{% endif %}"><span class="bn-icon">⚠</span>Alerts</a>
+  <a href="/assets/live" class="{% if request.path == '/assets/live' %}active{% endif %}"><span class="bn-icon">▦</span>Assets</a>
   <a href="/audit" class="{% if request.path == '/audit' %}active{% endif %}"><span class="bn-icon">▦</span>{{ t('nav.audit') }}</a>
   {% endif %}
 </nav>

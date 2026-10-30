@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}SentinelOT — Live Assets{% endblock %}
+{% block body %}
+<div class="ms-content">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <h2>Live Asset Inventory</h2>
+        <div class="panel-subtitle">Assets observed by the passive watcher, most-recently-seen first</div>
+      </div>
+      <button class="btn btn-sm" onclick="MS_ASSETS.fetchAssets()">Refresh</button>
+    </div>
+    <div class="panel-body">
+      <div class="dashboard-table-wrap">
+        <table class="ms-table">
+          <thead>
+            <tr>
+              <th>IP</th>
+              <th>Protocols</th>
+              <th>Role</th>
+              <th>First Seen</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody id="assets-body">
+            <tr><td colspan="5"><div class="ms-loading"><div class="ms-spinner"></div> Loading assets...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+var MS_ASSETS = (function() {
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function fetchAssets() {
+    fetch("/api/live/assets")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var rows = (d && d.assets) || [];
+        var body = document.getElementById("assets-body");
+        if (!rows.length) {
+          body.innerHTML = "<tr><td colspan='5' style='text-align:center;opacity:0.6'>No assets observed yet.</td></tr>";
+          return;
+        }
+        body.innerHTML = rows.map(function(a) {
+          return "<tr>" +
+            "<td style='font-family:var(--font-mono)'>" + esc(a.ip) + "</td>" +
+            "<td>" + esc(a.protocols || "—") + "</td>" +
+            "<td>" + esc(a.role || "—") + "</td>" +
+            "<td style='font-family:var(--font-mono);font-size:0.85em'>" + esc(a.first_seen || "—") + "</td>" +
+            "<td style='font-family:var(--font-mono);font-size:0.85em'>" + esc(a.last_seen || "—") + "</td>" +
+            "</tr>";
+        }).join("");
+      })
+      .catch(function(e) {
+        var body = document.getElementById("assets-body");
+        body.innerHTML = "<tr><td colspan='5' style='text-align:center;color:var(--color-danger)'>Failed to load assets: " + esc(e) + "</td></tr>";
+      });
+  }
+  document.addEventListener("DOMContentLoaded", fetchAssets);
+  return { fetchAssets: fetchAssets };
+})();
+</script>
+{% endblock %}

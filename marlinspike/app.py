@@ -6079,6 +6079,27 @@ def create_app():
             logging.getLogger(__name__).exception("api_live_alerts failed: %s", e)
             return jsonify({"alerts": [], "error": str(e)}), 500
 
+    @app.route("/assets/live")
+    def live_assets_page():
+        from flask import render_template
+        return render_template("live_assets.html")
+
+    @app.route("/api/live/assets")
+    def api_live_assets():
+        from flask import jsonify
+        try:
+            from marlinspike.live_models import LiveAsset
+            rows = LiveAsset.query.order_by(LiveAsset.last_seen.desc()).limit(500).all()
+            return jsonify({"assets": [
+                {"ip": r.ip, "protocols": r.protocols, "role": r.role,
+                 "first_seen": r.first_seen, "last_seen": r.last_seen}
+                for r in rows
+            ]})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("api_live_assets failed: %s", e)
+            return jsonify({"assets": [], "error": str(e)}), 500
+
     return app
 
 
