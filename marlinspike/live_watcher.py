@@ -1,4 +1,4 @@
-import glob, json, logging, os, subprocess, threading, time
+import glob, json, logging, os, re, subprocess, threading, time
 from datetime import datetime, timezone
 from marlinspike.models import db
 from marlinspike.live_models import LiveAsset, LiveAlert, LiveProcessedFile
@@ -80,7 +80,11 @@ def _run_dpi(path):
         fam = ev.get("family") or {}
         proto_tx = fam.get("protocol_transaction") or {}
         ops = proto_tx.get("operation") or ""
-        is_write = any(w in ops.lower() for w in ("write", "program", "download", "force", "set"))
+        # Word-boundary match: token must be a whole word or followed by a
+        # non-letter boundary, so "setup_communication" does NOT match "set",
+        # but "set_register" and "write_single_register" DO match.
+        _op_l = ops.lower()
+        is_write = any(re.search(r"(?:^|[^a-z0-9])" + w + r"(?![a-z])", _op_l) for w in ("write", "program", "download", "force", "set"))
         events.append({
             "src_ip": env.get("src_ip"),
             "dst_ip": env.get("dst_ip"),
@@ -104,11 +108,17 @@ def _update_assets(conv):
     proto = conv.get("protocol"); role = conv.get("role"); now_iso = datetime.now(timezone.utc).isoformat()
     entry = _asset_cache.get(src)
     if entry is None:
-        entry = {"protocols": set(), "role": role, "first_seen": now_iso}
+        entry = {"protocols": set(), "role": role, "first_seen": now_iso, "byte_buckets": {}}
         _asset_cache[src] = entry
         db.session.add(LiveAsset(ip=src, protocols="", role=role, first_seen=now_iso, last_seen=now_iso))
     if proto: entry["protocols"].add(proto)
     if role and not entry.get("role"): entry["role"] = role
+    if proto:
+        buckets = entry.setdefault("byte_buckets", {}).setdefault(proto, [])
+        b = float(conv.get("bytes_total") or 0)
+        buckets.append(b)
+        if len(buckets) > 20:
+            del buckets[:len(buckets) - 20]
     row = LiveAsset.query.filter_by(ip=src).first()
     if row:
         row.protocols = ",".join(sorted(entry["protocols"]))
