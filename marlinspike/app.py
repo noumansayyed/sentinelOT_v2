@@ -6066,12 +6066,19 @@ def create_app():
     def api_live_alerts():
         from flask import jsonify
         try:
-            from marlinspike.live_models import LiveAlert
+            from marlinspike.live_models import LiveAlert, LiveReport
             rows = LiveAlert.query.order_by(LiveAlert.id.desc()).limit(100).all()
+            rmap = {}
+            if rows:
+                report_rows = LiveReport.query.filter(
+                    LiveReport.alert_id.in_([r.id for r in rows])
+                ).all()
+                rmap = {rr.alert_id: rr.id for rr in report_rows}
             return jsonify({"alerts": [
                 {"ts": r.ts, "rule": r.rule, "severity": r.severity,
                  "src_ip": r.src_ip, "dst_ip": r.dst_ip,
-                 "protocol": r.protocol, "message": r.message}
+                 "protocol": r.protocol, "message": r.message,
+                 "report_id": rmap.get(r.id)}
                 for r in rows
             ]})
         except Exception as e:
@@ -6083,6 +6090,16 @@ def create_app():
     def live_assets_page():
         from flask import render_template
         return render_template("live_assets.html")
+
+    @app.route("/reports/live/<int:rid>")
+    def live_report_page(rid):
+        from flask import render_template, abort
+        from marlinspike.live_models import LiveReport, LiveAlert
+        rpt = LiveReport.query.get(rid)
+        if not rpt:
+            abort(404)
+        alert = LiveAlert.query.get(rpt.alert_id)
+        return render_template("live_report.html", report=rpt, alert=alert)
 
     @app.route("/api/live/assets")
     def api_live_assets():

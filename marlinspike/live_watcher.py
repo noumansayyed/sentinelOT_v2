@@ -1,7 +1,7 @@
 import glob, json, logging, os, re, subprocess, threading, time
 from datetime import datetime, timezone
 from marlinspike.models import db
-from marlinspike.live_models import LiveAsset, LiveAlert, LiveProcessedFile
+from marlinspike.live_models import LiveAsset, LiveAlert, LiveProcessedFile, LiveReport
 from marlinspike.live_rules import evaluate
 from marlinspike.live_explainer import explain
 
@@ -58,6 +58,32 @@ def _process_file(app, path):
                 a["explanation"] = explain(a)
                 row = LiveAlert(ts=datetime.now(timezone.utc).isoformat(), rule=a["rule"], severity=a["severity"], src_ip=a["src_ip"], dst_ip=a["dst_ip"], protocol=a["protocol"], message=a["explanation"])
                 db.session.add(row)
+                db.session.flush()  # populate row.id before linking the report
+                import json as _json
+                _detail = {
+                    "rule": a["rule"],
+                    "severity": a["severity"],
+                    "src_ip": a["src_ip"],
+                    "dst_ip": a["dst_ip"],
+                    "protocol": a["protocol"],
+                    "operation": a.get("operation"),
+                    "includes_writes": bool(a.get("includes_writes")),
+                    "capture_file": name,
+                    "dedup_key": list(key),
+                }
+                _summary = (
+                    f"{a['rule']} ({a['severity']}) on {a['protocol']}: "
+                    f"{a['src_ip']} -> {a['dst_ip']}. {a['explanation']}"
+                )
+                report_row = LiveReport(
+                    alert_id=row.id,
+                    ts=row.ts,
+                    rule=a["rule"],
+                    severity=a["severity"],
+                    summary=_summary,
+                    detail_json=_json.dumps(_detail, default=str),
+                )
+                db.session.add(report_row)
                 created.append(row)
             _update_assets(conv)
         db.session.add(LiveProcessedFile(filename=name, ts=datetime.now(timezone.utc).isoformat()))

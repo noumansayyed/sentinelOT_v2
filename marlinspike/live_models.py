@@ -26,3 +26,13 @@ class LiveProcessedFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), unique=True, index=True)
     ts = db.Column(db.String(40))
+
+class LiveReport(db.Model):
+    __tablename__ = "live_reports"
+    id = db.Column(db.Integer, primary_key=True)
+    alert_id = db.Column(db.Integer, index=True, nullable=False)
+    ts = db.Column(db.String(40), index=True)
+    rule = db.Column(db.String(40), index=True)
+    severity = db.Column(db.String(20))
+    summary = db.Column(db.Text)
+    detail_json = db.Column(db.Text)

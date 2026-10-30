@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}SentinelOT — Live Report #{{ report.id }}{% endblock %}
+{% block body %}
+<div class="ms-content">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <h2>Live Report #{{ report.id }}</h2>
+        <div class="panel-subtitle">{{ report.rule }} — {{ report.severity }} — {{ report.ts }}</div>
+      </div>
+      <a class="btn btn-sm" href="/alerts">← Back to Alerts</a>
+    </div>
+    <div class="panel-body">
+      <div class="dashboard-table-wrap" style="margin-bottom:18px;">
+        <table class="ms-table">
+          <tbody>
+            <tr><th style="width:180px;">Rule</th><td class="mono">{{ report.rule }}</td></tr>
+            <tr><th>Severity</th><td><span class="chip chip-{{ report.severity|lower }}">{{ report.severity }}</span></td></tr>
+            <tr><th>Time (UTC)</th><td class="mono">{{ report.ts }}</td></tr>
+            <tr><th>Source</th><td class="mono">{{ alert.src_ip if alert else "—" }}</td></tr>
+            <tr><th>Destination</th><td class="mono">{{ alert.dst_ip if alert and alert.dst_ip else "—" }}</td></tr>
+            <tr><th>Protocol</th><td>{{ alert.protocol if alert and alert.protocol else "—" }}</td></tr>
+            <tr><th>Linked Alert ID</th><td class="mono">{{ report.alert_id }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3 style="margin:8px 0 6px 0;">Summary</h3>
+      <p style="line-height:1.55; color:var(--text-dim);">{{ report.summary }}</p>
+      <h3 style="margin:18px 0 6px 0;">Detail</h3>
+      <pre class="mono" style="background:rgba(0,0,0,0.25); padding:12px; border-radius:4px; font-size:0.85em; overflow:auto; white-space:pre-wrap;">{{ report.detail_json }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

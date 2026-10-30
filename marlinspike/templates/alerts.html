@@ -22,10 +22,11 @@
               <th>Destination</th>
               <th>Protocol</th>
               <th>Explanation</th>
+              <th>Report</th>
             </tr>
           </thead>
           <tbody id="alerts-body">
-            <tr><td colspan="7"><div class="ms-loading"><div class="ms-spinner"></div> Loading alerts...</div></td></tr>
+            <tr><td colspan="8"><div class="ms-loading"><div class="ms-spinner"></div> Loading alerts...</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -42,7 +43,7 @@ var MS_ALERTS = (function() {
       .then(function(data) {
         var tbody = document.getElementById('alerts-body');
         if (!data.alerts || data.alerts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7"><div class="ms-empty"><div class="ms-empty-title">No alerts detected yet.</div><div class="ms-empty-sub">The watcher is running. Trigger some OT traffic to see alerts.</div></div></td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8"><div class="ms-empty"><div class="ms-empty-title">No alerts detected yet.</div><div class="ms-empty-sub">The watcher is running. Trigger some OT traffic to see alerts.</div></div></td></tr>';
           return;
         }
         tbody.innerHTML = '';
@@ -54,7 +55,8 @@ var MS_ALERTS = (function() {
             '<td class="mono">' + a.src_ip + '</td>' +
             '<td class="mono">' + (a.dst_ip || '—') + '</td>' +
             '<td>' + (a.protocol || '—') + '</td>' +
-            '<td style="font-size:0.85em; color:var(--text-dim); max-width:400px;">' + a.message + '</td>';
+            '<td style="font-size:0.85em; color:var(--text-dim); max-width:400px;">' + a.message + '</td>' +
+            '<td>' + (a.report_id ? '<a class="btn btn-sm" href="/reports/live/' + a.report_id + '">Report</a>' : '<span class="dim">—</span>') + '</td>';
           tbody.appendChild(tr);
         });
       });
