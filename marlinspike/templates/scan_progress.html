@@ -6,11 +6,11 @@
 <title>MarlinSpike — {{ t('live.title') }}</title>
 <style nonce="{{ csp_nonce }}">
 :root {
-  --bg: #0d1720; --bg-deep: #090e18; --bg-surface: #101928;
-  --panel: #14202f; --panel-alt: #101928; --panel-strong: #19253a;
-  --border: #1f3048; --border-dim: #111d30;
-  --text: #cdd8e3; --text-dim: #6e7f96; --text-muted: #344056;
-  --accent: #5b8af0;
+  --bg: var(--bg); --bg-deep: #090e18; --bg-surface: var(--panel-alt);
+  --panel: var(--panel); --panel-alt: var(--panel-alt); --panel-strong: #19253a;
+  --border: var(--border); --border-dim: #111d30;
+  --text: var(--text); --text-dim: var(--text-dim); --text-muted: #344056;
+  --accent: var(--accent);
   --sev-critical: #ef4444; --sev-critical-bg: rgba(239,68,68,0.10); --sev-critical-border: rgba(239,68,68,0.28);
   --sev-high: #f97316;
   --sev-medium: #f59e0b;
